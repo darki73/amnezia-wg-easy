@@ -1,4 +1,4 @@
-# WireGuard Easy
+# WireGuard Easy (AmneziaWG)
 
 [![Build & Publish Docker Image to Docker Hub](https://github.com/wg-easy/wg-easy/actions/workflows/deploy.yml/badge.svg?branch=production)](https://github.com/wg-easy/wg-easy/actions/workflows/deploy.yml)
 [![Lint](https://github.com/wg-easy/wg-easy/actions/workflows/lint.yml/badge.svg?branch=master)](https://github.com/wg-easy/wg-easy/actions/workflows/lint.yml)
@@ -6,14 +6,14 @@
 [![Sponsor](https://img.shields.io/github/sponsors/weejewel)](https://github.com/sponsors/WeeJeWel)
 ![GitHub Stars](https://img.shields.io/github/stars/wg-easy/wg-easy)
 
-You have found the easiest way to install & manage WireGuard on any Linux host!
+You have found the easiest way to install & manage AmneziaWG on any Linux host!
 
 <p align="center">
   <img src="./assets/screenshot.png" width="802" />
 </p>
 
 ## Features
-* All-in-one: WireGuard + Web UI.
+* All-in-one: AmneziaWG + Web UI.
 * Easy installation, simple to use.
 * List, create, edit, delete, enable & disable clients.
 * Show a client's QR code.
@@ -76,7 +76,7 @@ To automatically install & run wg-easy, simply run:
   --sysctl="net.ipv4.conf.all.src_valid_mark=1" \
   --sysctl="net.ipv4.ip_forward=1" \
   --restart unless-stopped \
-  ghcr.io/wg-easy/wg-easy
+  ghcr.io/darki73/amnezia-wg-easy
 ```
 
 > 💡 Replace `YOUR_SERVER_IP` with your WAN IP, or a Dynamic DNS hostname.
@@ -130,7 +130,7 @@ To update to the latest version, simply run:
 ```bash
 docker stop wg-easy
 docker rm wg-easy
-docker pull ghcr.io/wg-easy/wg-easy
+docker pull ghcr.io/darki73/amnezia-wg-easy
 ```
 
 And then run the `docker run -d \ ...` command above again.
