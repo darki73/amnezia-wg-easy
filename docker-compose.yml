@@ -6,10 +6,10 @@ services:
     environment:
       # Change Language:
       # (Supports: en, ua, ru, tr, no, pl, fr, de, ca, es, ko, vi, nl, is, pt, chs, cht, it, th, hi)
-      - LANG=de
+      LANG: en
       # ⚠️ Required:
       # Change this to your host's public address
-      - WG_HOST=raspberrypi.local
+      WG_HOST: raspberrypi.local
 
       # Optional:
       # - PASSWORD_HASH=$$2y$$10$$hBCoykrB95WSzuV4fafBzOHWKu9sbyVa34GJr8VV5R/pIelfEMYyG (needs double $$, hash of 'foobar123'; see "How_to_generate_an_bcrypt_hash.md" for generate the hash)
@@ -28,6 +28,17 @@ services:
       # - UI_TRAFFIC_STATS=true
       # - UI_CHART_TYPE=0 # (0 Charts disabled, 1 # Line chart, 2 # Area chart, 3 # Bar chart)
 
+      # Optional (AmneziaWG):
+      # JC: 4
+      # JMIN: 40
+      # JMAX: 70
+      # S1: 5
+      # S2: 7
+      # H1: 1
+      # H2: 2
+      # H3: 3
+      # H4: 4
+
     image: ghcr.io/wg-easy/wg-easy
     container_name: wg-easy
     volumes:
@@ -36,6 +47,8 @@ services:
       - "51820:51820/udp"
       - "51821:51821/tcp"
     restart: unless-stopped
+    devices:
+      - /dev/net/tun:/dev/net/tun
     cap_add:
       - NET_ADMIN
       - SYS_MODULE

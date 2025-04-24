@@ -39,3 +39,17 @@ iptables -D FORWARD -o wg0 -j ACCEPT;
 module.exports.LANG = process.env.LANG || 'en';
 module.exports.UI_TRAFFIC_STATS = process.env.UI_TRAFFIC_STATS || 'false';
 module.exports.UI_CHART_TYPE = process.env.UI_CHART_TYPE || 0;
+
+// ──────────────────────────────────────────────────────────────────────────────
+// AmneziaWG obfuscation knobs (optional)
+// If the env-vars are missing they stay `null` and will be skipped later.
+// ──────────────────────────────────────────────────────────────────────────────
+module.exports.JC   = process.env.JC   || null;
+module.exports.JMIN = process.env.JMIN || null;
+module.exports.JMAX = process.env.JMAX || null;
+module.exports.S1   = process.env.S1   || null;
+module.exports.S2   = process.env.S2   || null;
+module.exports.H1   = process.env.H1   || null;
+module.exports.H2   = process.env.H2   || null;
+module.exports.H3   = process.env.H3   || null;
+module.exports.H4   = process.env.H4   || null;

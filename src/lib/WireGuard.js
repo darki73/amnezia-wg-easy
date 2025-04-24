@@ -23,7 +23,35 @@ const {
   WG_POST_UP,
   WG_PRE_DOWN,
   WG_POST_DOWN,
+  JC,
+  JMIN,
+  JMAX,
+  S1,
+  S2,
+  H1,
+  H2,
+  H3,
+  H4,
 } = require('../config');
+
+function buildAmneziaLines() {
+  const map = {
+    JC: 'Jc',
+    JMIN: 'Jmin',
+    JMAX: 'Jmax',
+    S1: 'S1',
+    S2: 'S2',
+    H1: 'H1',
+    H2: 'H2',
+    H3: 'H3',
+    H4: 'H4',
+  };
+
+  return Object.entries(map)
+    .filter(([env]) => process.env[env] !== undefined)
+    .map(([env, key]) => `${key} = ${process.env[env]}`)
+    .join('\n');
+}
 
 module.exports = class WireGuard {
 
@@ -106,6 +134,7 @@ PreUp = ${WG_PRE_UP}
 PostUp = ${WG_POST_UP}
 PreDown = ${WG_PRE_DOWN}
 PostDown = ${WG_POST_DOWN}
+${buildAmneziaLines() ? buildAmneziaLines() + '\n' : ''}
 `;
 
     for (const [clientId, client] of Object.entries(config.clients)) {
@@ -208,6 +237,7 @@ PrivateKey = ${client.privateKey ? `${client.privateKey}` : 'REPLACE_ME'}
 Address = ${client.address}/24
 ${WG_DEFAULT_DNS ? `DNS = ${WG_DEFAULT_DNS}\n` : ''}\
 ${WG_MTU ? `MTU = ${WG_MTU}\n` : ''}\
+${buildAmneziaLines()}
 
 [Peer]
 PublicKey = ${config.server.publicKey}

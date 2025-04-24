@@ -1,49 +1,59 @@
-# As a workaround we have to build on nodejs 18
-# nodejs 20 hangs on build with armv6/armv7
-FROM docker.io/library/node:18-alpine AS build_node_modules
+###############################################################################
+# Stage 0 – build AmneziaWG CLI tools (awg / awg-quick)                       #
+###############################################################################
+FROM alpine:3.20 AS build_awg_tools
+RUN apk add --no-cache git build-base linux-headers bash
+ENV WITH_WGQUICK=yes WITH_BASHCOMPLETION=no
+RUN git clone --depth 1 https://github.com/amnezia-vpn/amneziawg-tools /src \
+ && make -C /src/src -j$(nproc) \
+ && make -C /src/src install PREFIX=/usr
 
-# Update npm to latest
-RUN npm install -g npm@latest
+###############################################################################
+# Stage 1 – build AmneziaWG userspace implementation (wireguard-go)           #
+###############################################################################
+FROM golang:1.24-alpine AS build_awg_go
+RUN apk add --no-cache git make
+RUN git clone --depth 1 https://github.com/amnezia-vpn/amneziawg-go /src \
+ && cd /src && make
 
-# Copy Web UI
+###############################################################################
+# Stage 2 – install production Node modules for the UI                        #
+###############################################################################
+FROM node:20-alpine AS build_ui
 COPY src /app
 WORKDIR /app
-RUN npm ci --omit=dev &&\
-    mv node_modules /node_modules
+RUN npm ci --omit=dev \
+    && mv node_modules /node_modules
 
-# Copy build result to a new image.
-# This saves a lot of disk space.
-FROM docker.io/library/node:20-alpine
-HEALTHCHECK CMD /usr/bin/timeout 5s /bin/sh -c "/usr/bin/wg show | /bin/grep -q interface || exit 1" --interval=1m --timeout=5s --retries=3
-COPY --from=build_node_modules /app /app
+###############################################################################
+# Stage 3 – final runtime image (lean)                                        #
+###############################################################################
+FROM node:20-alpine
+RUN apk add --no-cache dumb-init iptables iptables-legacy iproute2 libcap bash \
+    && mkdir -p /etc/amnezia \
+    && ln -s /etc/wireguard /etc/amnezia/amneziawg
 
-# Move node_modules one directory up, so during development
-# we don't have to mount it in a volume.
-# This results in much faster reloading!
-#
-# Also, some node_modules might be native, and
-# the architecture & OS of your development machine might differ
-# than what runs inside of docker.
-COPY --from=build_node_modules /node_modules /node_modules
+# AmneziaWG CLI tools
+COPY --from=build_awg_tools /usr/bin/awg /usr/bin/
+COPY --from=build_awg_tools /usr/bin/awg-quick /usr/bin/
+# recreate the legacy names **inside the final image**
+RUN ln -sf /usr/bin/awg       /usr/bin/wg \
+ && ln -sf /usr/bin/awg-quick /usr/bin/wg-quick
 
-# Copy the needed wg-password scripts
-COPY --from=build_node_modules /app/wgpw.sh /bin/wgpw
-RUN chmod +x /bin/wgpw
+# userspace WireGuard implementation
+COPY --from=build_awg_go /src/amneziawg-go /usr/bin/wireguard-go
+RUN setcap cap_net_admin+ep /usr/bin/wireguard-go
 
-# Install Linux packages
-RUN apk add --no-cache \
-    dpkg \
-    dumb-init \
-    iptables \
-    iptables-legacy \
-    wireguard-tools
-
-# Use iptables-legacy
-RUN update-alternatives --install /sbin/iptables iptables /sbin/iptables-legacy 10 --slave /sbin/iptables-restore iptables-restore /sbin/iptables-legacy-restore --slave /sbin/iptables-save iptables-save /sbin/iptables-legacy-save
-
-# Set Environment
-ENV DEBUG=Server,WireGuard
-
-# Run Web UI
+# Node.js app
 WORKDIR /app
+COPY --from=build_ui /app /app
+COPY --from=build_ui /node_modules /node_modules
+
+# health probe: `wg show` must list at least one interface
+HEALTHCHECK --interval=1m --timeout=5s --retries=3 \
+  CMD /bin/sh -c "wg show | grep -q interface"
+
+ENV WG_QUICK_USERSPACE_IMPLEMENTATION=/usr/bin/wireguard-go \
+    DEBUG=Server,WireGuard
+
 CMD ["/usr/bin/dumb-init", "node", "server.js"]
